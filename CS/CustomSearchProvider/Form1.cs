@@ -1,8 +1,6 @@
 ﻿using DevExpress.XtraMap;
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace CustomSearchProvider {
@@ -28,10 +26,6 @@ namespace CustomSearchProvider {
         readonly List<LocationInformation> addresses = new List<LocationInformation>();
         public IEnumerable<LocationInformation> Addresses { get { return addresses; } }
         public event EventHandler<RequestCompletedEventArgs> OnDataResponse;
-        readonly TaskScheduler scheduler;
-        public SearchData() {
-            scheduler = TaskScheduler.FromCurrentSynchronizationContext();
-        }
         RequestCompletedEventArgs CreateEventArgs() {
             MapItem[] items = new MapItem[addresses.Count];
             for (int i = 0; i < items.Length; i++)
@@ -43,19 +37,16 @@ namespace CustomSearchProvider {
                 OnDataResponse(this, CreateEventArgs());
         }
         public void Search(string keyword) {
-            Task.Factory.StartNew(async () => {
-                Random rnd = new Random(DateTime.Now.Millisecond);
-                addresses.Clear();
-                int length = keyword.Length;
-                for (int i = 0; i < length; i++) {
-                    LocationInformation info = new LocationInformation();
-                    info.Address = new Address(keyword + " " + i.ToString());
-                    info.Location = new GeoPoint(rnd.Next(180) - 90, rnd.Next(360) - 180);
-                    addresses.Add(info);
-                }
-                await Task.Delay(500);
-                RaiseChanged();
-            }, CancellationToken.None, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach, scheduler);
+            Random rnd = new Random(DateTime.Now.Millisecond);
+            addresses.Clear();
+            int length = keyword.Length;
+            for (int i = 0; i < length; i++) {
+                LocationInformation info = new LocationInformation();
+                info.Address = new Address(keyword + " " + i.ToString());
+                info.Location = new GeoPoint(rnd.Next(180) - 90, rnd.Next(360) - 180);
+                addresses.Add(info);
+            }
+            RaiseChanged();
         }
     }
     public class Address : AddressBase {

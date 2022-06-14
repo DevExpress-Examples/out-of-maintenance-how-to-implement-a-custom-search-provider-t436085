@@ -1,8 +1,6 @@
 ﻿Imports DevExpress.XtraMap
 Imports System
 Imports System.Collections.Generic
-Imports System.Threading
-Imports System.Threading.Tasks
 Imports System.Windows.Forms
 
 Namespace CustomSearchProvider
@@ -49,18 +47,13 @@ Namespace CustomSearchProvider
 
 
         Private ReadOnly addresses_Renamed As New List(Of LocationInformation)()
-
         Public ReadOnly Property Addresses() As IEnumerable(Of LocationInformation)
             Get
                 Return addresses_Renamed
             End Get
         End Property
         Private Event OnDataResponse As EventHandler(Of RequestCompletedEventArgs) Implements IInformationData.OnDataResponse
-        Private ReadOnly scheduler As TaskScheduler
 
-        Public Sub New()
-            scheduler = TaskScheduler.FromCurrentSynchronizationContext()
-        End Sub
         Private Function CreateEventArgs() As RequestCompletedEventArgs
             Dim items(addresses_Renamed.Count - 1) As MapItem
             For i As Integer = 0 To items.Length - 1
@@ -72,23 +65,17 @@ Namespace CustomSearchProvider
             RaiseEvent OnDataResponse(Me, CreateEventArgs())
         End Sub
         Public Sub Search(ByVal keyword As String)
-            Call Task.Factory.StartNew(Async Function()
-                                           Dim rnd As Random = New Random(Date.Now.Millisecond)
-                                           addresses_Renamed.Clear()
-                                           Dim length = keyword.Length
-
-                                           For i = 0 To length - 1
-                                               Dim info As LocationInformation = New LocationInformation()
-                                               info.Address = New Address(keyword & " " & i.ToString())
-                                               info.Location = New GeoPoint(rnd.Next(180) - 90, rnd.Next(360) - 180)
-                                               addresses_Renamed.Add(info)
-                                           Next
-
-                                           Await Task.Delay(500)
-                                           RaiseChanged()
-                                       End Function, CancellationToken.None, TaskCreationOptions.LongRunning Or TaskCreationOptions.DenyChildAttach, scheduler)
+            Dim rnd As New Random(Date.Now.Millisecond)
+            addresses_Renamed.Clear()
+            Dim length As Integer = keyword.Length
+            For i As Integer = 0 To length - 1
+                Dim info As New LocationInformation()
+                info.Address = New Address(keyword & " " & i.ToString())
+                info.Location = New GeoPoint(rnd.Next(180) - 90, rnd.Next(360) - 180)
+                addresses_Renamed.Add(info)
+            Next i
+            RaiseChanged()
         End Sub
-
     End Class
     Public Class Address
         Inherits AddressBase
